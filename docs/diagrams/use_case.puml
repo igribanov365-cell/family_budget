@@ -1,0 +1,25 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Пользователь\n(член семьи)" as User
+
+package "Система учёта семейного бюджета" {
+  usecase "Добавить доход" as UC_Income
+  usecase "Добавить расход" as UC_Expense
+  usecase "Просмотреть баланс" as UC_Balance
+  usecase "Сформировать отчёт" as UC_Report
+  usecase "Управлять категориями" as UC_Category
+}
+
+User --> UC_Income
+User --> UC_Expense
+User --> UC_Balance
+User --> UC_Report
+User --> UC_Category
+
+UC_Report .> UC_Balance : <<include>>
+UC_Expense .> UC_Category : <<include>>
+UC_Income  .> UC_Category : <<include>>
+
+@enduml
