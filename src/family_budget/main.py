@@ -1,4 +1,6 @@
 from budget import Budget
+
+
 def main():
     budget = Budget()
 
@@ -15,5 +17,6 @@ def main():
     print("Hello, first-year student!")
     print()
     print(budget.report())
+
 if __name__ == "__main__":
     main()
