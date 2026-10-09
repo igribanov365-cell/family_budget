@@ -71,9 +71,19 @@ family_budget/                      # Корневая папка проекта
         └── use_case.png
 ```
 
-## Диаграмма Use Case
+## Диаграммы
+
+### Use Case диаграмма
 
 ![Use Case](docs/diagrams/use_case.png)
+
+### Блок-схема: добавление дохода/расхода
+
+![Add Transaction](docs/diagrams/flow_add_transaction.png)
+
+### Блок-схема: регистрация нового члена семьи
+
+![Registration](docs/diagrams/flow_registration.png)
 
 ## Технологии
 
