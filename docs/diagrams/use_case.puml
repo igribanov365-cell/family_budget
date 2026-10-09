@@ -2,24 +2,37 @@
 left to right direction
 skinparam packageStyle rectangle
 
-actor "Пользователь\n(член семьи)" as User
+actor "Член семьи" as Member
+actor "Глава семьи" as Head
 
-package "Система учёта семейного бюджета" {
-  usecase "Добавить доход" as UC_Income
+Head --|> Member
+
+rectangle "Система учета семейного бюджета" {
+
   usecase "Добавить расход" as UC_Expense
-  usecase "Просмотреть баланс" as UC_Balance
-  usecase "Сформировать отчёт" as UC_Report
+  usecase "Добавить доход" as UC_Income
+  usecase "Просмотреть личный отчет" as UC_PersonalReport
+  usecase "Просмотреть общий отчет" as UC_GeneralReport
+  usecase "Зарегистрировать нового\nчлена семьи" as UC_Register
   usecase "Управлять категориями" as UC_Category
+  usecase "Авторизоваться" as UC_Auth
+
+  Member --> UC_Expense
+  Member --> UC_Income
+  Member --> UC_PersonalReport
+  Member --> UC_Auth
+
+  Head --> UC_GeneralReport
+  Head --> UC_Register
+  Head --> UC_Category
+
+  UC_Expense        ..> UC_Auth : <<include>>
+  UC_Income         ..> UC_Auth : <<include>>
+  UC_PersonalReport ..> UC_Auth : <<include>>
+  UC_GeneralReport  ..> UC_Auth : <<include>>
+  UC_Register       ..> UC_Auth : <<include>>
+  UC_Category       ..> UC_Auth : <<include>>
+
 }
-
-User --> UC_Income
-User --> UC_Expense
-User --> UC_Balance
-User --> UC_Report
-User --> UC_Category
-
-UC_Report .> UC_Balance : <<include>>
-UC_Expense .> UC_Category : <<include>>
-UC_Income  .> UC_Category : <<include>>
 
 @enduml
