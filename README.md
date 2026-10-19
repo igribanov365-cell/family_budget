@@ -85,6 +85,10 @@ family_budget/                      # Корневая папка проекта
 
 ![Registration](docs/diagrams/flow_registration.png)
 
+### ER-диаграмма базы данных
+
+![ER Diagram](docs/diagrams/ERD.png)
+
 ## Технологии
 
 - **Git** — контроль версий
