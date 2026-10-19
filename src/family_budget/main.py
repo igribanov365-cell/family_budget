@@ -1,22 +1,32 @@
-from budget import Budget
-
+from db import init_db, get_report_data
 
 def main():
-    budget = Budget()
-
-    budget.add_income("Зарплата папы", 80000)
-    budget.add_income("Зарплата мамы", 65000)
-    budget.add_income("Пособие", 12000)
-
-    budget.add_expense("Продукты", 25000)
-    budget.add_expense("Коммунальные услуги", 8000)
-    budget.add_expense("Транспорт", 4000)
-    budget.add_expense("Образование", 15000)
-    budget.add_expense("Развлечения", 5000)
-
     print("Hello, first-year student!")
-    print()
-    print(budget.report())
+    
+    # 1. Инициализируем базу данных (создаем таблицы и данные)
+    init_db()
+    
+    # 2. Получаем данные из БД
+    transactions = get_report_data()
+    
+    # 3. Считаем итоги и выводим
+    total_income = 0
+    total_expense = 0
+    
+    print("\n=== Список всех транзакций ===")
+    for row in transactions:
+        date, user, category, t_type, amount = row
+        print(f"[{date}] {user} | {category} ({t_type}): {amount:.2f} руб.")
+        
+        if t_type == "Доход":
+            total_income += amount
+        else:
+            total_expense += amount
+
+    print("-" * 40)
+    print(f"Общий доход:  {total_income:.2f} руб.")
+    print(f"Общий расход: {total_expense:.2f} руб.")
+    print(f"Баланс:       {total_income - total_expense:.2f} руб.")
 
 if __name__ == "__main__":
     main()
