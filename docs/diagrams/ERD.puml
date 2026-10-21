@@ -1,0 +1,66 @@
+@startuml
+!theme plain
+scale 2
+skinparam defaultFontSize 14
+hide circle
+skinparam linetype ortho
+
+entity "users (Пользователи)" as users {
+  * user_id : INTEGER <<PK>>
+  --
+  * login : TEXT <<UNIQUE>>
+  * password_hash : TEXT
+  * username : TEXT
+  * email : TEXT
+  * role : TEXT
+  * created_at : DATETIME
+}
+
+entity "accounts (Счета)" as accounts {
+  * account_id : INTEGER <<PK>>
+  --
+  * user_id : INTEGER <<FK>>
+  * name : TEXT
+  * balance : REAL
+  * currency : TEXT
+}
+
+entity "categories (Категории)" as categories {
+  * category_id : INTEGER <<PK>>
+  --
+  * parent_id : INTEGER <<FK>> (для подкатегорий)
+  * name : TEXT
+  * type : TEXT
+  * color : TEXT
+}
+
+entity "transactions (Транзакции)" as transactions {
+  * transaction_id : INTEGER <<PK>>
+  --
+  * user_id : INTEGER <<FK>>
+  * account_id : INTEGER <<FK>>
+  * category_id : INTEGER <<FK>>
+  * amount : REAL
+  * transaction_date : DATETIME
+  * payment_method : TEXT (наличные/карта)
+  * description : TEXT
+}
+
+entity "regular_payments (Регулярные платежи)" as regular {
+  * payment_id : INTEGER <<PK>>
+  --
+  * user_id : INTEGER <<FK>>
+  * category_id : INTEGER <<FK>>
+  * amount : REAL
+  * frequency : TEXT (месяц/неделя)
+  * next_date : DATE
+}
+
+users ||--o{ accounts : "владеет"
+users ||--o{ transactions : "совершает"
+users ||--o{ regular : "настраивает"
+accounts ||--o{ transactions : "списывается с"
+categories ||--o{ transactions : "относится к"
+categories ||--o{ regular : "назначается для"
+categories ||--o| categories : "включает"
+@enduml
