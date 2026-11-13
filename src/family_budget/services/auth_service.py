@@ -29,7 +29,17 @@ def authenticate(login: str, password: str) -> User | None:
     return None
 
 
-def register(username: str, login: str, password: str, role: str = ROLE_MEMBER) -> int:
+def check_email(email: str | None) -> str | None:
+    email = (email or "").strip()
+    if not email:
+        return None
+    if "@" not in email or email.startswith("@") or email.endswith("@"):
+        raise ServiceError("Некорректный email")
+    return email
+
+
+def register(username: str, login: str, password: str,
+             email: str | None = None, role: str = ROLE_MEMBER) -> int:
     username, login = username.strip(), login.strip()
     if not username:
         raise ServiceError("Имя не может быть пустым")
@@ -39,6 +49,7 @@ def register(username: str, login: str, password: str, role: str = ROLE_MEMBER) 
         raise ServiceError("Пароль должен содержать минимум 4 символа")
     if role not in ROLES:
         raise ServiceError("Недопустимая роль")
+    email = check_email(email)
     if user_repository.get_by_login(login):
         raise ServiceError("Пользователь с таким логином уже существует")
-    return user_repository.create(username, role, login, hash_password(password))
+    return user_repository.create(login, hash_password(password), username, email, role)

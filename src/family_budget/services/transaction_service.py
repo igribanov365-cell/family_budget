@@ -1,21 +1,33 @@
 from datetime import datetime
 
-from repositories import category_repository, transaction_repository, user_repository
+from repositories import account_repository, category_repository, transaction_repository
 from models.transaction import Transaction
 from models.user import User
-from services.constants import ROLE_HEAD, TYPE_INCOME, TYPE_EXPENSE
+from services.constants import (
+    DATE_FORMAT, PAYMENT_METHODS, ROLE_HEAD, TYPE_INCOME,
+)
 from services.errors import ServiceError
 
 
-def _validate(amount: float, date: str, category_id: int):
+def _effect(type_: str, amount: float) -> float:
+    """Как транзакция меняет баланс счёта: доход увеличивает, расход уменьшает."""
+    return amount if type_ == TYPE_INCOME else -amount
+
+
+def _validate(amount: float, date: str, category_id: int, payment_method: str):
+    """Проверяет данные и возвращает категорию."""
     if amount <= 0:
         raise ServiceError("Сумма должна быть больше нуля")
     try:
-        datetime.strptime(date, "%Y-%m-%d")
+        datetime.strptime(date, DATE_FORMAT)
     except ValueError:
         raise ServiceError("Дата должна быть в формате ГГГГ-ММ-ДД")
-    if not category_repository.get_by_id(category_id):
+    if payment_method not in PAYMENT_METHODS:
+        raise ServiceError("Способ оплаты: 'Наличные' или 'Карта'")
+    category = category_repository.get_by_id(category_id)
+    if not category:
         raise ServiceError("Категория не найдена")
+    return category
 
 
 def _get_editable(actor: User, transaction_id: int) -> Transaction:
@@ -27,13 +39,23 @@ def _get_editable(actor: User, transaction_id: int) -> Transaction:
     return tr
 
 
-def add_transaction(actor: User, amount: float, date: str,
-                    description: str | None, category_id: int) -> int:
-    if not user_repository.get_by_id(actor.user_id):
-        raise ServiceError("Пользователь не найден")
-    _validate(amount, date, category_id)
+def add_transaction(actor: User, account_id: int, category_id: int, amount: float,
+                    date: str, payment_method: str, description: str | None) -> int:
+    account = account_repository.get_by_id(account_id)
+    if not account:
+        raise ServiceError("Счёт не найден")
+    if account.user_id != actor.user_id:
+        raise ServiceError("Транзакцию можно провести только по своему счёту")
+    category = _validate(amount, date, category_id, payment_method)
+    delta = _effect(category.type, amount)
+    if account.balance + delta < 0:
+        raise ServiceError("Недостаточно средств на счёте")
     desc = (description or "").strip() or None
-    return transaction_repository.create(amount, date, desc, actor.user_id, category_id)
+    new_id = transaction_repository.create(
+        actor.user_id, account_id, category_id, amount, date, payment_method, desc
+    )
+    account_repository.change_balance(account_id, delta)
+    return new_id
 
 
 def get_transactions(actor: User) -> list[Transaction]:
@@ -43,26 +65,25 @@ def get_transactions(actor: User) -> list[Transaction]:
     return transaction_repository.get_by_user(actor.user_id)
 
 
-def update_transaction(actor: User, transaction_id: int, amount: float,
-                       date: str, description: str | None, category_id: int):
-    _get_editable(actor, transaction_id)
-    _validate(amount, date, category_id)
+def update_transaction(actor: User, transaction_id: int, category_id: int, amount: float,
+                       date: str, payment_method: str, description: str | None):
+    old = _get_editable(actor, transaction_id)
+    new_category = _validate(amount, date, category_id, payment_method)
+    account = account_repository.get_by_id(old.account_id)
+    delta = _effect(new_category.type, amount) - _effect(old.category_type, old.amount)
+    if account.balance + delta < 0:
+        raise ServiceError("Недостаточно средств на счёте для такого изменения")
     desc = (description or "").strip() or None
-    transaction_repository.update(transaction_id, amount, date, desc, category_id)
+    transaction_repository.update(transaction_id, category_id, amount, date, payment_method, desc)
+    if delta:
+        account_repository.change_balance(old.account_id, delta)
 
 
 def delete_transaction(actor: User, transaction_id: int):
-    _get_editable(actor, transaction_id)
+    old = _get_editable(actor, transaction_id)
+    account = account_repository.get_by_id(old.account_id)
+    delta = -_effect(old.category_type, old.amount)  # откат влияния на баланс
+    if account.balance + delta < 0:
+        raise ServiceError("Нельзя удалить: баланс счёта станет отрицательным")
     transaction_repository.delete(transaction_id)
-
-
-def get_report() -> dict:
-    """Общий отчёт по семье: доходы, расходы, баланс и суммы по категориям."""
-    totals = transaction_repository.get_totals_by_type()
-    income, expense = totals[TYPE_INCOME], totals[TYPE_EXPENSE]
-    return {
-        "income": income,
-        "expense": expense,
-        "balance": income - expense,
-        "by_category": transaction_repository.get_totals_by_category(),
-    }
+    account_repository.change_balance(old.account_id, delta)

@@ -2,27 +2,30 @@ from database.database import get_connection
 from models.transaction import Transaction
 
 _SELECT = """
-    SELECT t.transaction_id, t.amount, t.transaction_date, t.description,
-           t.user_id, t.category_id,
-           u.username, c.name, c.type
+    SELECT t.transaction_id, t.user_id, t.account_id, t.category_id, t.amount,
+           t.transaction_date, t.payment_method, t.description,
+           u.username, a.name, c.name, c.type
     FROM transactions t
     JOIN users u ON u.user_id = t.user_id
+    JOIN accounts a ON a.account_id = t.account_id
     JOIN categories c ON c.category_id = t.category_id
 """
+_ORDER = " ORDER BY t.transaction_date DESC, t.transaction_id DESC"
 
 
 def _map(row) -> Transaction:
     return Transaction(*row)
 
 
-def create(amount: float, date: str, description: str | None,
-           user_id: int, category_id: int) -> int:
+def create(user_id: int, account_id: int, category_id: int, amount: float,
+           date: str, payment_method: str, description: str | None) -> int:
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
-        INSERT INTO transactions(amount, transaction_date, description, user_id, category_id)
-        VALUES (?, ?, ?, ?, ?)
-    """, (amount, date, description, user_id, category_id))
+        INSERT INTO transactions(user_id, account_id, category_id, amount,
+                                 transaction_date, payment_method, description)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (user_id, account_id, category_id, amount, date, payment_method, description))
     conn.commit()
     new_id = cur.lastrowid
     conn.close()
@@ -41,7 +44,7 @@ def get_by_id(transaction_id: int) -> Transaction | None:
 def get_all() -> list[Transaction]:
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute(_SELECT + " ORDER BY t.transaction_date DESC, t.transaction_id DESC")
+    cur.execute(_SELECT + _ORDER)
     rows = cur.fetchall()
     conn.close()
     return [_map(r) for r in rows]
@@ -50,24 +53,22 @@ def get_all() -> list[Transaction]:
 def get_by_user(user_id: int) -> list[Transaction]:
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute(
-        _SELECT + " WHERE t.user_id = ? ORDER BY t.transaction_date DESC, t.transaction_id DESC",
-        (user_id,),
-    )
+    cur.execute(_SELECT + " WHERE t.user_id = ?" + _ORDER, (user_id,))
     rows = cur.fetchall()
     conn.close()
     return [_map(r) for r in rows]
 
 
-def update(transaction_id: int, amount: float, date: str,
-           description: str | None, category_id: int):
+def update(transaction_id: int, category_id: int, amount: float, date: str,
+           payment_method: str, description: str | None):
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("""
         UPDATE transactions
-        SET amount = ?, transaction_date = ?, description = ?, category_id = ?
+        SET category_id = ?, amount = ?, transaction_date = ?,
+            payment_method = ?, description = ?
         WHERE transaction_id = ?
-    """, (amount, date, description, category_id, transaction_id))
+    """, (category_id, amount, date, payment_method, description, transaction_id))
     conn.commit()
     conn.close()
 
@@ -80,16 +81,20 @@ def delete(transaction_id: int):
     conn.close()
 
 
-def get_totals_by_type() -> dict[str, float]:
-    """Сумма по типам: {'Доход': ..., 'Расход': ...}."""
+def get_totals_by_type(user_id: int | None = None) -> dict[str, float]:
+    """Суммы по типам: {'Доход': ..., 'Расход': ...}. user_id=None — вся семья."""
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("""
+    sql = """
         SELECT c.type, COALESCE(SUM(t.amount), 0)
         FROM transactions t
         JOIN categories c ON c.category_id = t.category_id
-        GROUP BY c.type
-    """)
+    """
+    params: tuple = ()
+    if user_id is not None:
+        sql += " WHERE t.user_id = ?"
+        params = (user_id,)
+    cur.execute(sql + " GROUP BY c.type", params)
     rows = cur.fetchall()
     conn.close()
     result = {"Доход": 0.0, "Расход": 0.0}
@@ -97,17 +102,23 @@ def get_totals_by_type() -> dict[str, float]:
     return result
 
 
-def get_totals_by_category() -> list[tuple[str, str, float]]:
-    """Список (тип, категория, сумма)."""
+def get_totals_by_category(user_id: int | None = None) -> list[tuple[str, str, float]]:
+    """Список (тип, категория, сумма). Подкатегории показываются как 'Родитель / Имя'."""
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("""
-        SELECT c.type, c.name, SUM(t.amount)
+    sql = """
+        SELECT c.type,
+               CASE WHEN p.name IS NULL THEN c.name ELSE p.name || ' / ' || c.name END,
+               SUM(t.amount)
         FROM transactions t
         JOIN categories c ON c.category_id = t.category_id
-        GROUP BY c.category_id
-        ORDER BY c.type, SUM(t.amount) DESC
-    """)
+        LEFT JOIN categories p ON p.category_id = c.parent_id
+    """
+    params: tuple = ()
+    if user_id is not None:
+        sql += " WHERE t.user_id = ?"
+        params = (user_id,)
+    cur.execute(sql + " GROUP BY c.category_id ORDER BY c.type, SUM(t.amount) DESC", params)
     rows = cur.fetchall()
     conn.close()
     return rows
