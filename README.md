@@ -6,6 +6,10 @@
 Скрипт `src/family_budget/export_data.py` извлекает все записи таблицы
 `transactions` (связана с `users` и `categories`) и сохраняет их в папку `out/`:
 `data.json`, `data.csv`, `data.xml`, `data.yaml`.
+**Автор:** Грибанов Илья
+**Группа:** 26-ИВТ-2-2
+
+**Ссылка на репозиторий:** [https://github.com/igribanov365-cell/family_budget](https://github.com/igribanov365-cell/family_budget)
 
 - JSON, XML, YAML: связанные данные вложены в объекты `user` и `category`;
 - CSV: связанные поля объединены в одну строку (`user_username`, `category_name`, ...);
