@@ -98,27 +98,31 @@ family_budget/                      # Корневая папка проекта
 
 * * *
 
-Скрипт `src/family_budget/export_data.py` извлекает все записи таблицы `transactions` (связана с `users` и `categories`) и сохраняет их в папку `out/`:
+## Лабораторная работа №5
 
-- `data.json` — данные в формате JSON;
-- `data.csv` — данные в формате CSV;
-- `data.xml` — данные в формате XML;
-- `data.yaml` — данные в формате YAML.
+### Форматы данных: JSON, CSV, XML, YAML
 
-Особенности:
+Скрипт `src/family_budget/export_data.py` извлекает все записи таблицы
+## Форматы данны
+из БД проекта и сохраняет их в папку
+ты данны
+## Лабораторн## Лаборатор## Лаборатор## Лабораторн
 
-- в JSON, XML и YAML связанные данные вложены в объекты `user` и `category`;
-- в CSV связанные поля объединены в одну строку (`user_username`, `category_name`, ...);
-- папка `out/` создаётся автоматически, если её нет;
-- внешние ключи определяются автоматически (`PRAGMA foreign_key_list`), JOIN-запрос строится динамически, поэтому для другой таблицы достаточно передать её имя.
+- JSON, XML, YAML: связанные данные вложены в объекты (`user`,
+AML
+
+Скрипт 
+и т.д.);
+- CSV: связанные поля объединены в одну строку (`user_login`,
+крипт `src/family
+ ...);
+- внешние ключи определяются автоматически, JOIN строится динамически.
 
 Запуск:
 
-```
-pip install -r requirements.txt
-cd src/family_budget
-python export_data.py            # таблица transactions
-python export_data.py users      # любая другая таблица
+    pip install -r requirements.txt
+    py src/family_budget/export_data.py
+    
 ```
 
 Тесты экспорта:
@@ -126,3 +130,6 @@ python export_data.py users      # любая другая таблица
 ```
 pytest tests/test_export_data.py
 ```
+
+
+-
