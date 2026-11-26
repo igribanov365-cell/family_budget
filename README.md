@@ -1,8 +1,8 @@
 # Учёт семейного бюджета
 
-## Лабораторная работа №2
+## Лабораторная работа №5
 
-### Документирование программных проектов: GitHub, Markdown и PlantUML
+### ФОРМАТЫ ДАННЫХ: JSON, CSV, XML, YAML
 
 **Автор:** Грибанов Илья **Группа:** 26-ИВТ-2-2 **Ссылка на репозиторий:** [https://github.com/igribanov365-cell/family_budget](https://github.com/igribanov365-cell/family_budget)
 
@@ -97,8 +97,6 @@ family_budget/                      # Корневая папка проекта
 - **pytest** — тесты
 
 * * *
-
-## Лабораторная работа №5
 
 ### Форматы данных: JSON, CSV, XML, YAML
 
