@@ -15,7 +15,6 @@
             <username>Папа</username>
             <role>Глава</role>
             <login>papa</login>
-            <password_hash>a1b2c3d4e5f60718$c2d089e84e1c931b27cfd1d36aee13912a02460404d0a7a5d0aeda75b946287e</password_hash>
         </user>
     </transaction>
     <transaction>
@@ -33,7 +32,6 @@
             <username>Мама</username>
             <role>Член семьи</role>
             <login>mama</login>
-            <password_hash>0f1e2d3c4b5a6978$285ca590cf4ef757163e92b5228450ab8a439cb0f8fa10018543c7b5196d839b</password_hash>
         </user>
     </transaction>
     <transaction>
@@ -51,7 +49,6 @@
             <username>Мама</username>
             <role>Член семьи</role>
             <login>mama</login>
-            <password_hash>0f1e2d3c4b5a6978$285ca590cf4ef757163e92b5228450ab8a439cb0f8fa10018543c7b5196d839b</password_hash>
         </user>
     </transaction>
     <transaction>
@@ -69,7 +66,6 @@
             <username>Мама</username>
             <role>Член семьи</role>
             <login>mama</login>
-            <password_hash>0f1e2d3c4b5a6978$285ca590cf4ef757163e92b5228450ab8a439cb0f8fa10018543c7b5196d839b</password_hash>
         </user>
     </transaction>
     <transaction>
@@ -87,7 +83,6 @@
             <username>Папа</username>
             <role>Глава</role>
             <login>papa</login>
-            <password_hash>a1b2c3d4e5f60718$c2d089e84e1c931b27cfd1d36aee13912a02460404d0a7a5d0aeda75b946287e</password_hash>
         </user>
     </transaction>
     <transaction>
@@ -105,7 +100,6 @@
             <username>Сын</username>
             <role>Член семьи</role>
             <login>son</login>
-            <password_hash>1122334455667788$286eb6cda9bcda66eb2499be4bb94c44c19f4cc505d42cb7a70b7270c5da632b</password_hash>
         </user>
     </transaction>
 </transactions>

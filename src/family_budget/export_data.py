@@ -1,6 +1,6 @@
 """Лабораторная работа №5. Форматы данных: JSON, CSV, XML, YAML.
 
-Скрипт извлекает все записи выбранной таблицы из SQLite-базы и сохраняет их
+Скрипт извлекает все записи выбранной таблицы из БД проекта (SQLite) и сохраняет их
 в папку out/ в четырёх форматах: data.json, data.csv, data.xml, data.yaml.
 
 Код универсальный: связи (внешние ключи) таблицы определяются автоматически
@@ -25,20 +25,24 @@ import yaml
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent.parent
-SCHEMA_PATH = PROJECT_ROOT / "schema.sql"
 OUT_DIR = PROJECT_ROOT / "out"
 
 TABLE_NAME = "transactions"
+
+# Колонки, в имени которых есть эти слова, в файлы не попадают (пароли и т.п.)
+SENSITIVE_WORDS = ("password", "passwd", "pwd", "hash", "salt", "token")
 
 
 # ---------------------------------------------------------------------------
 # Работа с базой данных
 # ---------------------------------------------------------------------------
-def create_connection(schema_path=SCHEMA_PATH):
-    """Создаёт in-memory БД SQLite и наполняет её из schema.sql."""
-    conn = sqlite3.connect(":memory:")
+def open_project_db():
+    """Открывает реальную БД проекта (database/database.py) с row_factory=Row."""
+    from database.database import get_connection, init_db
+
+    init_db()  # создаёт БД из schema.sql, если её ещё нет
+    conn = get_connection()
     conn.row_factory = sqlite3.Row
-    conn.executescript(Path(schema_path).read_text(encoding="utf-8"))
     return conn
 
 
@@ -47,12 +51,16 @@ def get_primary_key(conn, table):
     for col in conn.execute(f'PRAGMA table_info("{table}")'):
         if col["pk"] == 1:
             return col["name"]
-    raise ValueError(f"В таблице {table} нет первичного ключа")
+    return "rowid"  # у таблицы нет явного первичного ключа
 
 
 def get_columns(conn, table):
-    """Список колонок таблицы."""
-    return [c["name"] for c in conn.execute(f'PRAGMA table_info("{table}")')]
+    """Список колонок таблицы (без секретных, например password_hash)."""
+    return [
+        c["name"]
+        for c in conn.execute(f'PRAGMA table_info("{table}")')
+        if not any(w in c["name"].lower() for w in SENSITIVE_WORDS)
+    ]
 
 
 def get_foreign_keys(conn, table):
@@ -76,7 +84,8 @@ def build_query(conn, table):
     Возвращает SQL и список связей. Колонки главной таблицы получают
     префикс m__, колонки связанных таблиц - префикс <имя_связи>__.
     """
-    select_parts = [f'm."{c}" AS "m__{c}"' for c in get_columns(conn, table)]
+    all_main = [c["name"] for c in conn.execute(f'PRAGMA table_info("{table}")')]
+    select_parts = [f'm."{c}" AS "m__{c}"' for c in all_main]
     joins = []
     relations = []
 
@@ -219,7 +228,7 @@ def export_table(conn, table, out_dir=OUT_DIR):
 
 def main():
     table = sys.argv[1] if len(sys.argv) > 1 else TABLE_NAME
-    conn = create_connection()
+    conn = open_project_db()
     try:
         records = export_table(conn, table)
     finally:
